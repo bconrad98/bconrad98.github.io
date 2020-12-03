@@ -1,0 +1,17 @@
+---
+title: "Blog Post 1"
+author: "Braeden Conrad"
+date: 2020-12-02T21:13:14-05:00
+categories: ["R"]
+tags: ["R Markdown"]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE)
+```
+
+# Random Blog Post
+
+```{r}
+mean(rnorm(1000))
+```

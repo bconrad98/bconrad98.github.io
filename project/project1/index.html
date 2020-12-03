@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Braeden Conrad" />
+    
+    <link rel="shortcut icon" type="image/x-icon" href="../../img/favicon.ico">
+    <title>Project 1</title>
+    <meta name="generator" content="Hugo 0.79.0" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="../../css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="../../"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="../../post/">BLOG</a></li>
+        
+        <li><a href="../../projects/">PROJECTS</a></li>
+        
+        <li><a href="../../resume/">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="../../project/project1/">Project 1</a></strong>
+          </h3>
+        </div>
+ 
+<div class="blog-title">
+          <h4>
+         January 1, 0001 
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+
+<div id="braeden-conrad-bsc875" class="section level2">
+<h2>Braeden Conrad (bsc875)</h2>
+</div>
+<div id="understanding-the-value-of-nba-players-through-history" class="section level2">
+<h2>Understanding the Value of NBA Players through History</h2>
+<div id="introduction" class="section level3">
+<h3>Introduction</h3>
+<p>I was able to find two data sets by using Python to scrape from <a href="basketball-reference.com">basketballreference</a> and <a href="hoopshype.com">HoopsHype</a>. The first data set is all of the advanced statistics for every player since 1990. The second data set is all of the salaries for those players since 1990. In combining these two data sets, we hope to identify the best and worst value players/teams and trends since 1990. This analysis will not try to give insight on who is the best, but which teams are getting the best value out of their money.</p>
+<p>Information on the advanced statistics data is on the <a href="https://www.basketball-reference.com/leagues/NBA_2020_advanced.html">page</a> for 2020. <a href="https://hoopshype.com/salaries/players/">Here</a> is salary data for 2020. You can look at previous seasons by adding /{year} endpoint to the end.</p>
+<p>The main variables of concern are the <code>player name</code>, <code>team</code>, <code>year</code>, <code>box plus minus</code>, <code>win shares</code>, and <code>value over replacement player</code>. Box plus minus(BPM) estimates the points contributed by a player per 100 possessions, relative to an average player, translated to an average team. Win shares estimates the number of wins the player has contributed to their team. Value over replacement player (VORP) estimates the points per 100 <strong><em>team</em></strong> possessions relative to a replacement level player translated to an average team.</p>
+<p>I expect that the highest value players and teams will be young, because they could have a high amount of talent but still be in a contract that is low. It will be interesting to see the older players that ended up being good values. I expect those that were paid super high relative to their peers (Michael Jordan) will never be listed as a good value despite being one of the best. ### Tidying This includes everything that had to be done before the join.</p>
+<pre class="r"><code>library(tidyverse)
+library(cluster)</code></pre>
+<p>Need to remove one column from both, adjust the year column on the salaries data set, and get rid of foreign characters in the advanced stats to make sure join works correctly.</p>
+<p>Need to manually fix players that have names that appear differently in the data sets due to nicknames, different spelling. I only did the ones in the top 3000 or special cases such as &quot;Jr&quot; and &quot;III&quot;. This unfortunately had to be done since salaries data set does not have a unique player identifier like <code>slug</code> that is present in the advanced stats data set.</p>
+<pre class="r"><code># have to add 1 to year, because it marks it by the beginning
+# year
+salaries &lt;- read.csv(&quot;player_salaries_1991-2020.csv&quot;) %&gt;% select(-X) %&gt;% 
+    mutate(Year = Year + 1)
+adv_stats &lt;- read.csv(&quot;adv_stats_1991-2020.csv&quot;) %&gt;% select(-X)
+# this line accounts for foreign names not matching salary
+# data names
+adv_stats$name &lt;- iconv(adv_stats$name, from = &quot;UTF-8&quot;, to = &quot;ASCII//TRANSLIT&quot;)
+# only alpha-numeric
+adv_stats$name &lt;- gsub(&quot;[^[:alnum:][:space:]]&quot;, &quot;&quot;, adv_stats$name)
+salaries$Player &lt;- gsub(&quot;[^[:alnum:][:space:]]&quot;, &quot;&quot;, salaries$Player)
+# manually fix players that were in the top 5000 players
+salaries$Player &lt;- gsub(&quot;[Ã]&quot;, &quot;e&quot;, salaries$Player)
+salaries$Player[endsWith(salaries$Player, &quot;Stojakovic&quot;)] &lt;- &quot;Peja Stojakovic&quot;
+salaries$Player[endsWith(salaries$Player, &quot;Turkoglu&quot;)] &lt;- &quot;Hedo Turkoglu&quot;
+salaries$Player[salaries$Player == &quot;Louis Williams&quot;] &lt;- &quot;Lou Williams&quot;
+salaries$Player[salaries$Player == &quot;Maurice Williams&quot;] &lt;- &quot;Mo Williams&quot;
+salaries$Player[salaries$Player == &quot;Patrick Mills&quot;] &lt;- &quot;Patty Mills&quot;
+salaries$Player[salaries$Player == &quot;Dennis Schroeder&quot;] &lt;- &quot;Dennis Schroder&quot;
+salaries$Player[salaries$Player == &quot;Jose Juan Barea&quot;] &lt;- &quot;JJ Barea&quot;
+# fix players with &#39;Jr&#39; at end of name
+adv_stats$name[endsWith(adv_stats$name, &quot;Jr&quot;)] &lt;- gsub(&quot; Jr&quot;, 
+    &quot;&quot;, adv_stats$name[endsWith(adv_stats$name, &quot;Jr&quot;)])
+# fix players with &#39;III&#39; at end of name
+adv_stats$name[endsWith(adv_stats$name, &quot;III&quot;)] &lt;- gsub(&quot; III&quot;, 
+    &quot;&quot;, adv_stats$name[endsWith(adv_stats$name, &quot;III&quot;)])</code></pre>
+<p>Data sets are already tidy, so will mess them up and then tidy them again.</p>
+<pre class="r"><code># untidy and tidy advanced stats
+unTidy_adv &lt;- adv_stats %&gt;% pivot_wider(names_from = Year, values_from = name)
+head(unTidy_adv)</code></pre>
+<pre><code>## # A tibble: 6 x 57
+##     age assist_percenta… block_percentage box_plus_minus defensive_box_p…
+##   &lt;int&gt;            &lt;dbl&gt;            &lt;dbl&gt;          &lt;dbl&gt;            &lt;dbl&gt;
+## 1    22              5.8              2.5           -4.6             -1.2
+## 2    21             19.2              0.1           -5               -3  
+## 3    28              2.5              1.1           -3               -0.2
+## 4    28             39.4              0.1            5.3             -0.7
+## 5    31             11.6              0.6            1.4              0.2
+## 6    31             23.8              0.5            3.7              0.9
+## # … with 52 more variables: defensive_rebound_percentage &lt;dbl&gt;,
+## #   defensive_win_shares &lt;dbl&gt;, free_throw_attempt_rate &lt;dbl&gt;,
+## #   games_played &lt;int&gt;, is_combined_totals &lt;fct&gt;, minutes_played &lt;int&gt;,
+## #   offensive_box_plus_minus &lt;dbl&gt;, offensive_rebound_percentage &lt;dbl&gt;,
+## #   offensive_win_shares &lt;dbl&gt;, player_efficiency_rating &lt;dbl&gt;,
+## #   positions &lt;fct&gt;, slug &lt;fct&gt;, steal_percentage &lt;dbl&gt;, team &lt;fct&gt;,
+## #   three_point_attempt_rate &lt;dbl&gt;, total_rebound_percentage &lt;dbl&gt;,
+## #   true_shooting_percentage &lt;dbl&gt;, turnover_percentage &lt;dbl&gt;,
+## #   usage_percentage &lt;dbl&gt;, value_over_replacement_player &lt;dbl&gt;,
+## #   win_shares &lt;dbl&gt;, win_shares_per_48_minutes &lt;dbl&gt;, `1991` &lt;chr&gt;,
+## #   `1992` &lt;chr&gt;, `1993` &lt;chr&gt;, `1994` &lt;chr&gt;, `1995` &lt;chr&gt;, `1996` &lt;chr&gt;,
+## #   `1997` &lt;chr&gt;, `1998` &lt;chr&gt;, `1999` &lt;chr&gt;, `2000` &lt;chr&gt;, `2001` &lt;chr&gt;,
+## #   `2002` &lt;chr&gt;, `2003` &lt;chr&gt;, `2004` &lt;chr&gt;, `2005` &lt;chr&gt;, `2006` &lt;chr&gt;,
+## #   `2007` &lt;chr&gt;, `2008` &lt;chr&gt;, `2009` &lt;chr&gt;, `2010` &lt;chr&gt;, `2011` &lt;chr&gt;,
+## #   `2012` &lt;chr&gt;, `2013` &lt;chr&gt;, `2014` &lt;chr&gt;, `2015` &lt;chr&gt;, `2016` &lt;chr&gt;,
+## #   `2017` &lt;chr&gt;, `2018` &lt;chr&gt;, `2019` &lt;chr&gt;, `2020` &lt;chr&gt;</code></pre>
+<pre class="r"><code>tidy_adv &lt;- unTidy_adv %&gt;% pivot_longer(28:57, names_to = &quot;Year&quot;, 
+    values_to = &quot;name&quot;)
+tidy_adv &lt;- na.omit(tidy_adv)
+head(tidy_adv)</code></pre>
+<pre><code>## # A tibble: 6 x 29
+##     age assist_percenta… block_percentage box_plus_minus defensive_box_p…
+##   &lt;int&gt;            &lt;dbl&gt;            &lt;dbl&gt;          &lt;dbl&gt;            &lt;dbl&gt;
+## 1    22              5.8              2.5           -4.6             -1.2
+## 2    21             19.2              0.1           -5               -3  
+## 3    28              2.5              1.1           -3               -0.2
+## 4    28             39.4              0.1            5.3             -0.7
+## 5    31             11.6              0.6            1.4              0.2
+## 6    31             23.8              0.5            3.7              0.9
+## # … with 24 more variables: defensive_rebound_percentage &lt;dbl&gt;,
+## #   defensive_win_shares &lt;dbl&gt;, free_throw_attempt_rate &lt;dbl&gt;,
+## #   games_played &lt;int&gt;, is_combined_totals &lt;fct&gt;, minutes_played &lt;int&gt;,
+## #   offensive_box_plus_minus &lt;dbl&gt;, offensive_rebound_percentage &lt;dbl&gt;,
+## #   offensive_win_shares &lt;dbl&gt;, player_efficiency_rating &lt;dbl&gt;,
+## #   positions &lt;fct&gt;, slug &lt;fct&gt;, steal_percentage &lt;dbl&gt;, team &lt;fct&gt;,
+## #   three_point_attempt_rate &lt;dbl&gt;, total_rebound_percentage &lt;dbl&gt;,
+## #   true_shooting_percentage &lt;dbl&gt;, turnover_percentage &lt;dbl&gt;,
+## #   usage_percentage &lt;dbl&gt;, value_over_replacement_player &lt;dbl&gt;,
+## #   win_shares &lt;dbl&gt;, win_shares_per_48_minutes &lt;dbl&gt;, Year &lt;chr&gt;, name &lt;chr&gt;</code></pre>
+<pre class="r"><code># untidy and tidy salaries
+unTidy_sal &lt;- salaries %&gt;% pivot_wider(names_from = Year, values_from = Salary)
+unTidy_sal %&gt;% glimpse()</code></pre>
+<pre><code>## Rows: 2,597
+## Columns: 31
+## $ Player &lt;chr&gt; &quot;Patrick Ewing&quot;, &quot;Hot Rod Williams&quot;, &quot;Hakeem Olajuwon&quot;, &quot;Charl…
+## $ `1991` &lt;list&gt; [&quot;$4,250,000&quot;, &quot;$3,785,000&quot;, &quot;$3,175,000&quot;, &quot;$2,900,000&quot;, &quot;$2,…
+## $ `1992` &lt;list&gt; [&quot;$3,139,000&quot;, &quot;$3,786,000&quot;, &quot;$3,170,000&quot;, &quot;$3,200,000&quot;, &quot;$2,…
+## $ `1993` &lt;list&gt; [&quot;$3,300,000&quot;, &quot;$3,786,000&quot;, &quot;$3,170,000&quot;, &quot;$2,420,000&quot;, &quot;$2,…
+## $ `1994` &lt;list&gt; [&quot;$3,825,000&quot;, NULL, &quot;$3,170,000&quot;, &quot;$3,250,000&quot;, &quot;$2,844,000&quot;…
+## $ `1995` &lt;list&gt; [&quot;$4,486,700&quot;, NULL, &quot;$3,169,900&quot;, &quot;$4,030,000&quot;, &quot;$2,844,000&quot;…
+## $ `1996` &lt;list&gt; [&quot;$18,724,000&quot;, NULL, &quot;$5,305,000&quot;, &quot;$4,760,000&quot;, &quot;$2,844,000…
+## $ `1997` &lt;list&gt; [&quot;$3,000,000&quot;, NULL, &quot;$9,655,000&quot;, &quot;$4,695,000&quot;, &quot;$2,844,000&quot;…
+## $ `1998` &lt;list&gt; [&quot;$20,500,000&quot;, NULL, &quot;$11,156,000&quot;, &quot;$2,250,000&quot;, &quot;$2,941,50…
+## $ `1999` &lt;list&gt; [&quot;$18,500,000&quot;, NULL, &quot;$12,943,000&quot;, &quot;$1,000,000&quot;, &quot;$3,510,00…
+## $ `2000` &lt;list&gt; [&quot;$15,000,000&quot;, &quot;$1,925,000&quot;, &quot;$14,302,001&quot;, &quot;$9,000,000&quot;, &quot;$…
+## $ `2001` &lt;list&gt; [&quot;$14,000,000&quot;, NULL, &quot;$16,700,000&quot;, NULL, &quot;$4,650,000&quot;, NULL…
+## $ `2002` &lt;list&gt; [&quot;$2,118,420&quot;, NULL, &quot;$5,061,539&quot;, NULL, NULL, NULL, &quot;$1,000,…
+## $ `2003` &lt;list&gt; [&quot;$1,850,000&quot;, NULL, &quot;$5,694,231&quot;, NULL, NULL, NULL, &quot;$4,546,…
+## $ `2004` &lt;list&gt; [NULL, NULL, &quot;$6,326,923&quot;, NULL, NULL, NULL, NULL, NULL, NULL…
+## $ `2005` &lt;list&gt; [NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, …
+## $ `2006` &lt;list&gt; [NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, …
+## $ `2007` &lt;list&gt; [NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, …
+## $ `2008` &lt;list&gt; [NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, …
+## $ `2009` &lt;list&gt; [NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, …
+## $ `2010` &lt;list&gt; [NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, …
+## $ `2011` &lt;list&gt; [NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, …
+## $ `2012` &lt;list&gt; [NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, …
+## $ `2013` &lt;list&gt; [NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, …
+## $ `2014` &lt;list&gt; [NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, …
+## $ `2015` &lt;list&gt; [NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, …
+## $ `2016` &lt;list&gt; [NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, …
+## $ `2017` &lt;list&gt; [NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, …
+## $ `2018` &lt;list&gt; [NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, …
+## $ `2019` &lt;list&gt; [NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, …
+## $ `2020` &lt;list&gt; [NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, …</code></pre>
+<pre class="r"><code>tidy_sal &lt;- unTidy_sal %&gt;% pivot_longer(2:31, names_to = &quot;Year&quot;, 
+    values_to = &quot;Salary&quot;)
+tidy_sal$Salary &lt;- as.character(tidy_sal$Salary)
+tidy_sal &lt;- tidy_sal %&gt;% filter(Salary != &quot;NULL&quot;)
+tidy_sal %&gt;% glimpse()</code></pre>
+<pre><code>## Rows: 14,038
+## Columns: 3
+## $ Player &lt;chr&gt; &quot;Patrick Ewing&quot;, &quot;Patrick Ewing&quot;, &quot;Patrick Ewing&quot;, &quot;Patrick Ew…
+## $ Year   &lt;chr&gt; &quot;1991&quot;, &quot;1992&quot;, &quot;1993&quot;, &quot;1994&quot;, &quot;1995&quot;, &quot;1996&quot;, &quot;1997&quot;, &quot;1998&quot;…
+## $ Salary &lt;chr&gt; &quot;4345&quot;, &quot;3602&quot;, &quot;3706&quot;, &quot;3993&quot;, &quot;4438&quot;, &quot;2248&quot;, &quot;3509&quot;, &quot;3235&quot;…</code></pre>
+<p>For the advanced stats, I made it ugly by making the column names the year and the values from names. This causes the columns to have many NA's since players didn't play in every year in this data set. When pivoting longer, I bring the names and years back into their respective columns, but now it is a way bigger data set because of all of the NA's, so I drop them and the data set is tidy again. I did the same thing for the salaries data set but with year and salary.</p>
+</div>
+<div id="joining" class="section level3">
+<h3>Joining</h3>
+<pre class="r"><code>data &lt;- inner_join(adv_stats, salaries, by = c(name = &quot;Player&quot;, 
+    &quot;Year&quot;))
+
+# who are we missing?
+mean(adv_stats$name %in% data$name)</code></pre>
+<pre><code>## [1] 0.9804929</code></pre>
+<pre class="r"><code>nrow(data) - nrow(adv_stats)</code></pre>
+<pre><code>## [1] -768</code></pre>
+<p>I chose to do an inner join with two keys: <code>Year</code> and <code>name</code>. The player's name is referred to as <code>Player</code> in the salaries data set, so I accounted for that in the code. An inner join was necessary because both the salary data and advanced stats for a player are necessary and analysis couldn't be done without them.</p>
+<p>We retain 98.1% of the players listed in advanced stats after the join. This equates to a loss of 757 total observations. This is largely due to difference in the way names are input in the salaries data set vs. the advanced stats data set (nicknames, misspelling). Many of the names were manually corrected above if it was easy to do or if the player was identified as a top player.</p>
+</div>
+<div id="add-derived-values" class="section level3">
+<h3>Add derived values</h3>
+<p>I calculate a set of derived statistics that attempt to quantify a player's value, accounting for their salary: <code>vorp_val</code>,<code>bpm_val</code>, and <code>ws_val</code>. These attempt to factor in salary to the advanced stats above.</p>
+<p>A players z score salary, <span class="math inline">\(z_s\)</span>, is calculated relative to all the other players that year. The adjusted z score salary, <span class="math inline">\(z_{adj}\)</span>, is the difference in z score from the minimum z score over the league average difference in z score from the minimum. <span class="math display">\[z_{adj}=\frac{z_s-z_{min}}{z_{avg\_diff}}\]</span> This adjusted z score is calculated for salary and the other advanced statistics, and then <code>vorp_val</code> is just <span class="math inline">\(\frac{z_{adj\_vorp}}{z_{adj\_sal}}\)</span>.</p>
+<pre class="r"><code>data$Salary &lt;- as.numeric(gsub(&quot;[$,]&quot;, &quot;&quot;, data$Salary))
+data$Year &lt;- as.numeric(data$Year)
+data$team[data$team == &quot;&quot;] &lt;- &quot;WASHINGTON BULLETS&quot;
+# only want to count players that played at least 15 games
+data &lt;- data %&gt;% filter(games_played &gt;= 20)
+# get rookie year for each player
+data &lt;- data %&gt;% group_by(name) %&gt;% mutate(rookie_year = min(Year))
+# get average and sd salary for player based off the year
+# they are playing
+data &lt;- data %&gt;% group_by(Year) %&gt;% mutate(avg_plyr_sal_year = mean(Salary), 
+    sd_plyr_sal_year = sd(Salary), avg_bpm_year = mean(box_plus_minus), 
+    sd_bpm_year = sd(box_plus_minus), avg_ws_year = mean(win_shares), 
+    sd_ws_year = sd(win_shares), avg_vorp_year = mean(value_over_replacement_player), 
+    sd_vorp_year = sd(value_over_replacement_player)) %&gt;% ungroup()
+# get each players z score of salary
+data &lt;- data %&gt;% mutate(z_Sal = (Salary - avg_plyr_sal_year)/sd_plyr_sal_year, 
+    z_bpm = (box_plus_minus - avg_bpm_year)/sd_bpm_year, z_ws = (win_shares - 
+        avg_ws_year)/sd_ws_year, z_vorp = (value_over_replacement_player - 
+        avg_vorp_year)/sd_vorp_year)
+# get minimum stats to be used for adjustment
+data &lt;- data %&gt;% group_by(Year) %&gt;% mutate(min_z_Sal_yr = min(z_Sal), 
+    min_bpm_yr = min(z_bpm), min_vorp_yr = min(z_vorp), min_ws_yr = min(z_ws)) %&gt;% 
+    ungroup()
+
+# get all of the differences
+data &lt;- data %&gt;% mutate(diff_z_Sal = z_Sal - min_z_Sal_yr, diff_bpm = z_bpm - 
+    min_bpm_yr, diff_vorp = z_vorp - min_vorp_yr, diff_ws = z_ws - 
+    min_ws_yr)
+# get the average distance per year, to account for different
+# years
+data &lt;- data %&gt;% group_by(Year) %&gt;% mutate(avg_diff_z_Sal = mean(diff_z_Sal), 
+    avg_diff_bpm = mean(diff_bpm), avg_diff_vorp = mean(diff_vorp), 
+    avg_diff_ws = mean(diff_ws)) %&gt;% ungroup()
+# now get the actual values
+data &lt;- data %&gt;% mutate(adj_z_Sal = diff_z_Sal/avg_diff_z_Sal + 
+    1, adj_bpm = diff_bpm/avg_diff_bpm + 1, adj_vorp = diff_vorp/avg_diff_vorp + 
+    1, adj_ws = diff_ws/avg_diff_ws + 1, bpm_val = adj_bpm/adj_z_Sal, 
+    vorp_val = adj_vorp/adj_z_Sal, ws_val = adj_ws/adj_z_Sal)
+# drop unneeded columns
+data &lt;- data %&gt;% select(-contains(&quot;min_&quot;))</code></pre>
+</div>
+<div id="visualization" class="section level3">
+<h3>Visualization</h3>
+<pre class="r"><code>data &lt;- data %&gt;% select(name, Year, bpm_val, vorp_val, ws_val, 
+    adj_z_Sal, everything())</code></pre>
+<div id="correlation-matrix" class="section level4">
+<h4>Correlation Matrix</h4>
+<pre class="r"><code>cormat &lt;- data %&gt;% select(bpm_val, vorp_val, ws_val, adj_z_Sal, 
+    age, assist_percentage, block_percentage, total_rebound_percentage, 
+    true_shooting_percentage, usage_percentage, turnover_percentage, 
+    steal_percentage, box_plus_minus, value_over_replacement_player, 
+    win_shares) %&gt;% cor(use = &quot;pair&quot;)
+tidycor &lt;- cormat %&gt;% as.data.frame %&gt;% rownames_to_column(&quot;var1&quot;) %&gt;% 
+    pivot_longer(-1, names_to = &quot;var2&quot;, values_to = &quot;correlation&quot;)
+tidycor %&gt;% ggplot(aes(var1, var2, fill = correlation)) + geom_tile() + 
+    scale_fill_gradient2(low = &quot;red&quot;, mid = &quot;white&quot;, high = &quot;blue&quot;) + 
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.35, 
+        size = 7), axis.text.y = element_text(size = 7)) + coord_fixed() + 
+    ggtitle(&quot;Correlation Matrix&quot;)</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-7-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>I had way too many numeric variables to make this heat map readable, so I just chose the most relevant ones to look at.</p>
+<p>Things to note: - win shares, BPM, and VORP all strongly positively correlate with each other, and so do <code>bpm_val</code>,<code>vorp_val</code>,and <code>ws_val</code> - Win share value, BPM value, and VORP value all negatively correlate with z score of salary, as expected. However, for VORP value and win share value the correlation isn't as strong. - As expected, we see age correlates negatively with the value stats, because people get paid more with age generally. - Interesting that there is a stronger negative correlation between total rebound percentage and assist percentage. This basically means that if you are grabbing a lot of rebounds you are probably a big guy who doesn't handle the ball much and makes less passes.</p>
+</div>
+<div id="top-10-best-value-player-seasons-all-time" class="section level4">
+<h4>Top 10 Best Value Player Seasons all time</h4>
+<p>I am going to stick with using VORP for the rest of the project, because using all three would make this report too long.I decided on using VORP after using it to rank players, teams, etc., and it seemed to be the most accurate and not have any outliers present.</p>
+<pre class="r"><code>data %&gt;% filter(Year - rookie_year &gt; 1) %&gt;% filter(rank(desc(vorp_val)) %in% 
+    1:10) %&gt;% arrange(desc(vorp_val)) %&gt;% select(name, Year, 
+    vorp_val)</code></pre>
+<pre><code>## # A tibble: 10 x 3
+##    name                   Year vorp_val
+##    &lt;chr&gt;                 &lt;dbl&gt;    &lt;dbl&gt;
+##  1 Andrei Kirilenko       2004     4.20
+##  2 Chris Paul             2008     3.69
+##  3 Nikola Jokic           2018     3.67
+##  4 Giannis Antetokounmpo  2017     3.37
+##  5 Chris Paul             2009     3.31
+##  6 Kevin Durant           2010     3.10
+##  7 Dana Barros            1995     2.99
+##  8 Rajon Rondo            2010     2.95
+##  9 Draymond Green         2015     2.93
+## 10 Dwyane Wade            2006     2.90</code></pre>
+</div>
+<div id="top-10-worst-values" class="section level4">
+<h4>Top 10 Worst Values</h4>
+<pre class="r"><code>data %&gt;% filter(rank(vorp_val) %in% 1:10) %&gt;% arrange(vorp_val) %&gt;% 
+    select(name, Year, vorp_val)</code></pre>
+<pre><code>## # A tibble: 10 x 3
+##    name             Year vorp_val
+##    &lt;chr&gt;           &lt;dbl&gt;    &lt;dbl&gt;
+##  1 Patrick Ewing    1996    0.223
+##  2 Patrick Ewing    1998    0.231
+##  3 Tracy McGrady    2010    0.251
+##  4 Juwan Howard     2002    0.278
+##  5 Juwan Howard     2000    0.278
+##  6 Rashard Lewis    2012    0.280
+##  7 Stephon Marbury  2009    0.284
+##  8 Chris Webber     2005    0.287
+##  9 Joe Johnson      2016    0.290
+## 10 Patrick Ewing    2001    0.294</code></pre>
+</div>
+<div id="relationship-between-vorp-and-z-score-salary" class="section level4">
+<h4>Relationship between vorp and z score salary</h4>
+<pre class="r"><code>library(ggrepel)
+best_values &lt;- data %&gt;% filter(rank(desc(vorp_val)) %in% 1:3)
+worst_values &lt;- data %&gt;% filter(rank(vorp_val) %in% 1:3)
+ggplot(data, aes(x = adj_vorp, y = adj_z_Sal)) + geom_point() + 
+    geom_point(data = best_values, col = &quot;green&quot;, size = 2) + 
+    geom_label_repel(data = best_values, aes(label = name), box.padding = 0.35, 
+        point.padding = 0.5, segment.color = &quot;grey50&quot;) + geom_point(data = worst_values, 
+    col = &quot;red&quot;, size = 2) + geom_label_repel(data = worst_values, 
+    aes(label = name), box.padding = 0.35, point.padding = 0.5, 
+    segment.color = &quot;grey50&quot;) + geom_smooth(method = &quot;lm&quot;) + 
+    ggtitle(&quot;Salary vs. Player Performance&quot;)</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-10-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="top-career-best-values-min.-5-years-played" class="section level4">
+<h4>Top Career Best Values (min. 5 years played)</h4>
+<pre class="r"><code>data %&gt;% group_by(name) %&gt;% filter(n_distinct(Year) &gt; 4) %&gt;% 
+    summarize(avg_vorp_plyr = median(vorp_val)) %&gt;% filter(rank(desc(avg_vorp_plyr)) %in% 
+    1:10) %&gt;% arrange(desc(avg_vorp_plyr))</code></pre>
+<pre><code>## # A tibble: 10 x 2
+##    name              avg_vorp_plyr
+##    &lt;chr&gt;                     &lt;dbl&gt;
+##  1 Nikola Jokic               2.43
+##  2 Brandon Roy                2.19
+##  3 Isaiah Thomas              1.86
+##  4 KarlAnthony Towns          1.84
+##  5 Fred Hoiberg               1.77
+##  6 Stephen Curry              1.71
+##  7 Spencer Dinwiddie          1.69
+##  8 Kawhi Leonard              1.68
+##  9 Josh Richardson            1.66
+## 10 Adrian Griffin             1.65</code></pre>
+</div>
+<div id="career-worst-values-min.-5-years-played" class="section level4">
+<h4>Career Worst Values (min. 5 years played)</h4>
+<pre class="r"><code>data %&gt;% group_by(name) %&gt;% filter(n_distinct(Year) &gt; 4) %&gt;% 
+    summarize(avg_vorp_plyr = median(vorp_val)) %&gt;% filter(rank(avg_vorp_plyr) %in% 
+    1:10) %&gt;% arrange(avg_vorp_plyr)</code></pre>
+<pre><code>## # A tibble: 10 x 2
+##    name            avg_vorp_plyr
+##    &lt;chr&gt;                   &lt;dbl&gt;
+##  1 Kevin Duckworth         0.439
+##  2 Benoit Benjamin         0.462
+##  3 Bryant Reeves           0.503
+##  4 Vin Baker               0.504
+##  5 Harrison Barnes         0.515
+##  6 Jalen Rose              0.523
+##  7 Keith Van Horn          0.528
+##  8 Allen Crabbe            0.532
+##  9 Shaquille ONeal         0.552
+## 10 Juwan Howard            0.559</code></pre>
+<p>Interesting, Patrick Ewing is no longer in the top 10. Let's look at his <code>vorp_val</code> over his career.</p>
+<pre class="r"><code>pat &lt;- filter(data, name == &quot;Patrick Ewing&quot;)
+ggplot(pat) + geom_line(aes(x = Year, y = vorp_val)) + scale_x_continuous(breaks = pat$Year) + 
+    ggtitle(&quot;Patrick Ewing Value Over Career&quot;)</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-13-1.png" width="672" style="display: block; margin: auto;" /> Now we can see that he has a mixture of very high and very low value years. It is noticeable that Michael Jordan was the highest paid by far for several years in the 90's, but never made my top 10 worsts. This is simply because he was <strong><em>that</em></strong> good.</p>
+</div>
+<div id="who-had-the-best-value-for-those-who-were-paid-high-salaries" class="section level4">
+<h4>Who had the best value for those who were paid high salaries?</h4>
+<pre class="r"><code>data %&gt;% group_by(name) %&gt;% summarize(avg_vorp_val = mean(vorp_val), 
+    avg_adj_Sal = mean(adj_z_Sal)) %&gt;% filter(rank(desc(avg_adj_Sal)) %in% 
+    1:20) %&gt;% arrange(desc(avg_vorp_val))</code></pre>
+<pre><code>## # A tibble: 20 x 3
+##    name              avg_vorp_val avg_adj_Sal
+##    &lt;chr&gt;                    &lt;dbl&gt;       &lt;dbl&gt;
+##  1 LeBron James             1.48         4.21
+##  2 Chris Paul               1.41         3.97
+##  3 Michael Jordan           1.34         6.23
+##  4 Kevin Durant             1.34         3.88
+##  5 Tim Duncan               1.07         3.91
+##  6 Blake Griffin            0.923        3.97
+##  7 Kobe Bryant              0.913        4.53
+##  8 David Robinson           0.892        4.93
+##  9 Kevin Garnett            0.841        4.91
+## 10 Carmelo Anthony          0.809        3.87
+## 11 Hakeem Olajuwon          0.799        4.53
+## 12 Dikembe Mutombo          0.755        3.93
+## 13 Larry Bird               0.750        5.72
+## 14 Stephon Marbury          0.746        3.90
+## 15 Anfernee Hardaway        0.738        3.92
+## 16 Alonzo Mourning          0.707        4.09
+## 17 Chris Webber             0.702        4.51
+## 18 Patrick Ewing            0.670        5.49
+## 19 Shaquille ONeal          0.644        5.51
+## 20 Hot Rod Williams         0.479        4.92</code></pre>
+</div>
+<div id="best-team-values-of-all-time" class="section level4">
+<h4>Best team values of all time</h4>
+<pre class="r"><code>data %&gt;% group_by(team, Year) %&gt;% summarize(avg_vorp_val = mean(vorp_val)) %&gt;% 
+    ungroup() %&gt;% filter(rank(desc(avg_vorp_val)) %in% 1:10) %&gt;% 
+    arrange(desc(avg_vorp_val))</code></pre>
+<pre><code>## # A tibble: 10 x 3
+##    team                    Year avg_vorp_val
+##    &lt;fct&gt;                  &lt;dbl&gt;        &lt;dbl&gt;
+##  1 PORTLAND TRAIL BLAZERS  2009         1.51
+##  2 HOUSTON ROCKETS         2013         1.50
+##  3 UTAH JAZZ               2004         1.45
+##  4 PHOENIX SUNS            2014         1.44
+##  5 &lt;NA&gt;                    1996         1.44
+##  6 ATLANTA HAWKS           1997         1.43
+##  7 LOS ANGELES CLIPPERS    2002         1.41
+##  8 MIAMI HEAT              1997         1.40
+##  9 CLEVELAND CAVALIERS     1998         1.40
+## 10 HOUSTON ROCKETS         1999         1.39</code></pre>
+<p>These are the highest average value teams, and it's clear that a high value team doesn't mean you are good, as none of these teams won the finals.</p>
+</div>
+<div id="team-value-plot" class="section level4">
+<h4>Team value plot</h4>
+<p>This demonstrates the value for each NBA team that has existed since 1990 over time. It appears that teams will lose value when they acquire someone that has a really good contract. Very high values don't seem to happen during a team's good years, which indicates that even if you pay a player more than they are worth, it doesn't matter as long as they are better than the other players.</p>
+<pre class="r"><code>u_teams &lt;- split(unique(data$team), ceiling(seq_along(unique(data$team))/10))
+for (u_team in u_teams) {
+    teams &lt;- data %&gt;% filter(team %in% u_team) %&gt;% group_by(team, 
+        Year)
+    print(ggplot(teams, aes(x = Year, y = vorp_val, col = team)) + 
+        geom_line(stat = &quot;summary&quot;, fun = &quot;mean&quot;) + facet_wrap(~team) + 
+        theme(legend.position = &quot;none&quot;, strip.text = element_text(size = 5), 
+            axis.text.x = element_text(size = 5), axis.text.y = element_text(size = 5)))
+}</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-16-1.png" width="672" style="display: block; margin: auto;" /><img src="../../project/project1_files/figure-html/unnamed-chunk-16-2.png" width="672" style="display: block; margin: auto;" /><img src="../../project/project1_files/figure-html/unnamed-chunk-16-3.png" width="672" style="display: block; margin: auto;" /><img src="../../project/project1_files/figure-html/unnamed-chunk-16-4.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="looking-at-position" class="section level4">
+<h4>Looking at position</h4>
+<pre class="r"><code>library(ggthemes)
+positions &lt;- data %&gt;% group_by(positions, Year)
+ggplot(positions, aes(x = Year, y = adj_z_Sal, col = positions)) + 
+    geom_line(aes(linetype = positions), stat = &quot;summary&quot;, fun = &quot;mean&quot;) + 
+    theme_solarized_2() + ggtitle(&quot;Salaries by Position vs. Time&quot;)</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-17-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(positions, aes(x = Year, y = vorp_val, col = positions)) + 
+    geom_line(aes(linetype = positions), stat = &quot;summary&quot;, fun = &quot;mean&quot;) + 
+    theme_solarized_2() + ggtitle(&quot;Player Value by Position vs. Time&quot;)</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-17-2.png" width="672" style="display: block; margin: auto;" /></p>
+<p>This is really interesting to see and show's how the style of play has shifted in the NBA. In 1990, the graph shows that centers were consistenly the highest paid group in the NBA. By 2020, point guards are now the highest paid. We can see that in the second plot the positions are converging to a similar value. This indicates the &quot;small ball&quot; style that is overcoming the NBA, and highlights how each position was more distinctly valued back in the day.</p>
+</div>
+</div>
+<div id="pam-clustering" class="section level3">
+<h3>PAM Clustering</h3>
+<pre class="r"><code># do PCA to reduce the components
+data &lt;- data %&gt;% select(-Salary, -contains(c(&quot;_year&quot;, &quot;diff_&quot;, 
+    &quot;_played&quot;, &quot;is_&quot;, &quot;slug&quot;)), -starts_with(&quot;z_&quot;))
+eig1 &lt;- data %&gt;% select(-name, -Year, -positions, -team) %&gt;% 
+    cor %&gt;% eigen
+xy &lt;- data %&gt;% select(-name, -Year, -positions, -team) %&gt;% as.matrix
+scores &lt;- t(t(eig1$vectors) %*% t(xy)) %&gt;% as.data.frame
+# now do PAM clustering with the principal components
+pam_fit &lt;- pam(scores, k = 2)
+pam_fit$silinfo$avg.width</code></pre>
+<pre><code>## [1] 0.2889651</code></pre>
+<pre class="r"><code>data &lt;- data %&gt;% mutate(cluster_id = as.factor(pam_fit$clustering))
+data %&gt;% filter(cluster_id == &quot;1&quot;) %&gt;% filter(rank(desc(value_over_replacement_player)) %in% 
+    1:13) %&gt;% arrange(desc(value_over_replacement_player)) %&gt;% 
+    select(name, Year, value_over_replacement_player)</code></pre>
+<pre><code>## # A tibble: 9 x 3
+##   name             Year value_over_replacement_player
+##   &lt;chr&gt;           &lt;dbl&gt;                         &lt;dbl&gt;
+## 1 Kevin Garnett    2004                          10  
+## 2 Kevin Garnett    2005                           9.1
+## 3 Shaquille ONeal  2000                           9  
+## 4 David Robinson   1996                           8.3
+## 5 David Robinson   1991                           8.2
+## 6 Tim Duncan       2002                           8  
+## 7 Dirk Nowitzki    2006                           7.9
+## 8 Hakeem Olajuwon  1993                           7.8
+## 9 Kevin Durant     2010                           7.5</code></pre>
+<pre class="r"><code>data %&gt;% filter(cluster_id == 2) %&gt;% filter(rank(desc(value_over_replacement_player)) %in% 
+    1:20) %&gt;% arrange(desc(value_over_replacement_player)) %&gt;% 
+    select(name, Year, value_over_replacement_player)</code></pre>
+<pre><code>## # A tibble: 10 x 3
+##    name            Year value_over_replacement_player
+##    &lt;chr&gt;          &lt;dbl&gt;                         &lt;dbl&gt;
+##  1 LeBron James    2009                          11.8
+##  2 David Robinson  1994                          11.4
+##  3 Michael Jordan  1991                          10.8
+##  4 LeBron James    2010                          10.3
+##  5 Michael Jordan  1993                          10.2
+##  6 Stephen Curry   2016                           9.5
+##  7 LeBron James    2006                           9.4
+##  8 Michael Jordan  1992                           9.2
+##  9 LeBron James    2005                           9.1
+## 10 Kevin Durant    2013                           8.9</code></pre>
+<p>Looks like both clusters have quality players, what differentiated the two clusters to give them a solid sil width? One theory is that group 1 is related closely to tall players such as power forwards and centers while group 2 is related closely to shorter players such as guards.</p>
+<pre class="r"><code>data %&gt;% group_by(positions) %&gt;% summarize(clust1 = mean(cluster_id == 
+    1), clust2 = mean(cluster_id == 2)) %&gt;% ungroup()</code></pre>
+<pre><code>## # A tibble: 5 x 3
+##   positions          clust1  clust2
+##   &lt;fct&gt;               &lt;dbl&gt;   &lt;dbl&gt;
+## 1 [&#39;CENTER&#39;]         0.994  0.00602
+## 2 [&#39;POINT GUARD&#39;]    0.0590 0.941  
+## 3 [&#39;POWER FORWARD&#39;]  0.972  0.0282 
+## 4 [&#39;SHOOTING GUARD&#39;] 0.546  0.454  
+## 5 [&#39;SMALL FORWARD&#39;]  0.842  0.158</code></pre>
+<p>Pretty cool! Looks like shooting guards still belong more in cluster 1, and cluster 2 players are more rare but are very present in point guards. Let's look at plots of the important stats that could be related to bigs and guards.</p>
+<pre class="r"><code>library(GGally)
+ggpairs(data, columns = c(&quot;total_rebound_percentage&quot;, &quot;usage_percentage&quot;, 
+    &quot;assist_percentage&quot;), aes(col = cluster_id)) + ggtitle(&quot;Stats that Determine Cluster&quot;)</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-20-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre><code>## R version 3.6.1 (2019-07-05)
+## Platform: x86_64-pc-linux-gnu (64-bit)
+## Running under: Ubuntu 18.04.5 LTS
+## 
+## Matrix products: default
+## BLAS:   /stor/system/opt/R/R-3.6.1/lib/R/lib/libRblas.so
+## LAPACK: /stor/system/opt/R/R-3.6.1/lib/R/lib/libRlapack.so
+## 
+## locale:
+##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+##  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+##  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+##  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+##  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+## [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+##  [1] GGally_2.0.0    ggthemes_4.2.0  ggrepel_0.8.2   cluster_2.1.0  
+##  [5] forcats_0.5.0   stringr_1.4.0   dplyr_1.0.1     purrr_0.3.4    
+##  [9] readr_1.3.1     tidyr_1.1.1     tibble_3.0.3    ggplot2_3.3.2  
+## [13] tidyverse_1.3.0
+## 
+## loaded via a namespace (and not attached):
+##  [1] Rcpp_1.0.5         lubridate_1.7.9    lattice_0.20-41    assertthat_0.2.1  
+##  [5] digest_0.6.25      utf8_1.1.4         plyr_1.8.6         R6_2.4.1          
+##  [9] cellranger_1.1.0   backports_1.1.8    reprex_0.3.0       evaluate_0.14     
+## [13] httr_1.4.2         blogdown_0.20      pillar_1.4.6       rlang_0.4.7       
+## [17] readxl_1.3.1       rstudioapi_0.11    blob_1.2.1         Matrix_1.2-17     
+## [21] rmarkdown_2.3      labeling_0.3       splines_3.6.1      munsell_0.5.0     
+## [25] broom_0.7.0        compiler_3.6.1     modelr_0.1.8       xfun_0.16         
+## [29] pkgconfig_2.0.3    mgcv_1.8-31        htmltools_0.5.0    tidyselect_1.1.0  
+## [33] bookdown_0.20      reshape_0.8.8      fansi_0.4.1        crayon_1.3.4      
+## [37] dbplyr_1.4.4       withr_2.2.0        grid_3.6.1         nlme_3.1-148      
+## [41] jsonlite_1.7.0     gtable_0.3.0       lifecycle_0.2.0    DBI_1.1.0         
+## [45] magrittr_1.5       formatR_1.7        scales_1.1.1       cli_2.0.2         
+## [49] stringi_1.5.3      farver_2.0.3       fs_1.5.0           xml2_1.3.2        
+## [53] ellipsis_0.3.1     generics_0.0.2     vctrs_0.3.2        RColorBrewer_1.1-2
+## [57] tools_3.6.1        glue_1.4.2         hms_0.5.3          yaml_2.2.1        
+## [61] colorspace_1.4-1   rvest_0.3.6        knitr_1.29         haven_2.3.1</code></pre>
+<pre><code>## [1] &quot;2020-12-03 15:47:57 CST&quot;</code></pre>
+<pre><code>##                                       sysname 
+##                                       &quot;Linux&quot; 
+##                                       release 
+##                          &quot;4.15.0-117-generic&quot; 
+##                                       version 
+## &quot;#118-Ubuntu SMP Fri Sep 4 20:02:41 UTC 2020&quot; 
+##                                      nodename 
+##                  &quot;educcomp01.ccbb.utexas.edu&quot; 
+##                                       machine 
+##                                      &quot;x86_64&quot; 
+##                                         login 
+##                                     &quot;unknown&quot; 
+##                                          user 
+##                                      &quot;bsc875&quot; 
+##                                effective_user 
+##                                      &quot;bsc875&quot;</code></pre>
+</div>
+</div>
+
+            
+        <hr>         <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div> 
+            </div>
+          </div>
+
+   <hr>  <div class="disqus">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+
+    (function() {
+      
+      
+      if (window.location.hostname == "localhost")
+        return;
+
+      var disqus_shortname = '';
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div> 
+        </div>
+      </div>
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="../../js/docs.min.js"></script>
+<script src="../../js/main.js"></script>
+
+<script src="../../js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Posts on Braeden Conrad</title>
+    <link>/post/</link>
+    <description>Recent content in Posts on Braeden Conrad</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-US</language>
+    <lastBuildDate>Wed, 02 Dec 2020 21:13:14 -0500</lastBuildDate><atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Blog Post 1</title>
+      <link>/post/2020/12/02/blog-post-1/</link>
+      <pubDate>Wed, 02 Dec 2020 21:13:14 -0500</pubDate>
+      
+      <guid>/post/2020/12/02/blog-post-1/</guid>
+      <description> Random Blog Post mean(rnorm(1000)) ## [1] -0.01595489  </description>
+    </item>
+    
+  </channel>
+</rss>

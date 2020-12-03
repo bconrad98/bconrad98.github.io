@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Braeden Conrad</title>
+    <link>/</link>
+    <description>Recent content on Braeden Conrad</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-US</language>
+    <lastBuildDate>Wed, 02 Dec 2020 21:13:14 -0500</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Blog Post 1</title>
+      <link>/post/2020/12/02/blog-post-1/</link>
+      <pubDate>Wed, 02 Dec 2020 21:13:14 -0500</pubDate>
+      
+      <guid>/post/2020/12/02/blog-post-1/</guid>
+      <description> Random Blog Post mean(rnorm(1000)) ## [1] -0.01595489  </description>
+    </item>
+    
+    <item>
+      <title>Project 1</title>
+      <link>/project/project1/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/project/project1/</guid>
+      <description>Braeden Conrad (bsc875)  Understanding the Value of NBA Players through History Introduction I was able to find two data sets by using Python to scrape from basketballreference and HoopsHype. The first data set is all of the advanced statistics for every player since 1990. The second data set is all of the salaries for those players since 1990. In combining these two data sets, we hope to identify the best and worst value players/teams and trends since 1990.</description>
+    </item>
+    
+    <item>
+      <title>Project 2</title>
+      <link>/project/project2/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/project/project2/</guid>
+      <description>Braeden Conrad (bsc875)  Credit Card Application Analysis Introduction This data set, called CreditCard, contains cross-section data on the credit history for a sample of applicants for a type of credit card.
+It has 1,319 observations and 12 variables, which are:
+ card - whether or not the application was accepted reports - number of derogatory reports age - age in years plus twelfths of a year income - in USD (10,000) share - ratio of card expenditure to yearly income owner - whether or not the individual owns a home selfemp - self employed or not?</description>
+    </item>
+    
+    <item>
+      <title>Projects</title>
+      <link>/projects/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/projects/</guid>
+      <description> Check out some of my coding projects below:
+ Wrangling &amp;amp; Exploratory Data Analysis
+ Modeling, Inference, Prediction
+  -- </description>
+    </item>
+    
+    <item>
+      <title>Resume</title>
+      <link>/resume/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/resume/</guid>
+      <description>    </description>
+    </item>
+    
+  </channel>
+</rss>

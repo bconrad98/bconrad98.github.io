@@ -1,0 +1,367 @@
+---
+title: "Project 1"
+author: "SDS348 Fall 2020"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+---
+
+```{r global_options, include=FALSE}
+#DO NOT EDIT THIS CHUNK OR ANYTHING ABOVE IT!
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, fig.align = "center", warning = F, message = F, tidy=T, tidy.opts=list(width.cutoff=60),R.options=list(max.print=100))
+```
+## Braeden Conrad (bsc875)
+## Understanding the Value of NBA Players through History
+### Introduction
+I was able to find two data sets by using Python to scrape from [basketballreference](basketball-reference.com) and [HoopsHype](hoopshype.com). The first data set is all of the advanced statistics for every player since 1990. The second data set is all of the salaries for those players since 1990. In combining these two data sets, we hope to identify the best and worst value players/teams and trends since 1990. This analysis will not try to give insight on who is the best, but which teams are getting the best value out of their money.
+
+
+Information on the advanced statistics data is on the [page](https://www.basketball-reference.com/leagues/NBA_2020_advanced.html) for 2020. [Here](https://hoopshype.com/salaries/players/) is salary data for 2020. You can look at previous seasons by adding /{year} endpoint to the end. 
+
+
+The main variables of concern are the `player name`, `team`, `year`, `box plus minus`, `win shares`, and `value over replacement player`. Box plus minus(BPM) estimates the points contributed by a player per 100 possessions, relative to an average player, translated to an average team. Win shares estimates the number of wins the player has contributed to their team. Value over replacement player (VORP) estimates the points per 100 ***team*** possessions relative to a replacement level player translated to an average team.
+
+
+I expect that the highest value players and teams will be young, because they could have a high amount of talent but still be in a contract that is low. It will be interesting to see the older players that ended up being good values. I expect those that were paid super high relative to their peers (Michael Jordan) will never be listed as a good value despite being one of the best.
+### Tidying
+This includes everything that had to be done before the join.
+```{r}
+library(tidyverse)
+library(cluster)
+```
+Need to remove one column from both, adjust the year column on the salaries data set, and get rid of foreign characters in the advanced stats to make sure join works correctly. 
+
+Need to manually fix players that have names that appear differently in the data sets due to nicknames, different spelling. I only did the ones in the top 3000 or special cases such as "Jr" and "III". This unfortunately had to be done since salaries data set does not have a unique player identifier like `slug` that is present in the advanced stats data set.
+```{r}
+# have to add 1 to year, because it marks it by the beginning year
+salaries <- read.csv('player_salaries_1991-2020.csv') %>%
+  select(-X) %>%
+  mutate(Year=Year+1)
+adv_stats <- read.csv('adv_stats_1991-2020.csv') %>%
+  select(-X)
+# this line accounts for foreign names not matching salary data names
+adv_stats$name <- iconv(adv_stats$name,from='UTF-8',to='ASCII//TRANSLIT')
+# only alpha-numeric
+adv_stats$name <- gsub("[^[:alnum:][:space:]]","",adv_stats$name)
+salaries$Player <- gsub("[^[:alnum:][:space:]]","",salaries$Player)
+# manually fix players that were in the top 5000 players
+salaries$Player <- gsub("[Ã]","e",salaries$Player)
+salaries$Player[endsWith(salaries$Player,"Stojakovic")] <- "Peja Stojakovic"
+salaries$Player[endsWith(salaries$Player,"Turkoglu")] <- "Hedo Turkoglu"
+salaries$Player[salaries$Player=="Louis Williams"] <- "Lou Williams"
+salaries$Player[salaries$Player=="Maurice Williams"] <- "Mo Williams"
+salaries$Player[salaries$Player=="Patrick Mills"] <- "Patty Mills"
+salaries$Player[salaries$Player=="Dennis Schroeder"] <- "Dennis Schroder"
+salaries$Player[salaries$Player=="Jose Juan Barea"] <- "JJ Barea"
+# fix players with "Jr" at end of name
+adv_stats$name[endsWith(adv_stats$name,"Jr")]<- gsub(" Jr","",adv_stats$name[endsWith(adv_stats$name,"Jr")])
+# fix players with "III" at end of name
+adv_stats$name[endsWith(adv_stats$name,"III")]<- gsub(" III","",adv_stats$name[endsWith(adv_stats$name,"III")])
+```
+Data sets are already tidy, so will mess them up and then tidy them again. 
+```{r}
+# untidy and tidy advanced stats
+unTidy_adv <- adv_stats %>%
+  pivot_wider(names_from=Year,values_from=name)
+head(unTidy_adv)
+tidy_adv <- unTidy_adv %>% pivot_longer(28:57,names_to="Year",values_to="name")
+tidy_adv <- na.omit(tidy_adv)
+head(tidy_adv)
+
+# untidy and tidy salaries
+unTidy_sal <- salaries %>%
+  pivot_wider(names_from=Year,values_from=Salary)
+unTidy_sal %>% glimpse()
+tidy_sal <- unTidy_sal %>%
+  pivot_longer(2:31,names_to="Year",values_to="Salary")
+tidy_sal$Salary <- as.character(tidy_sal$Salary)
+tidy_sal <- tidy_sal %>% filter(Salary != "NULL")
+tidy_sal %>% glimpse()
+```
+
+For the advanced stats, I made it ugly by making the column names the year and the values from names. This causes the columns to have many NA's since players didn't play in every year in this data set. When pivoting longer, I bring the names and years back into their respective columns, but now it is a way bigger data set because of all of the NA's, so I drop them and the data set is tidy again. I did the same thing for the salaries data set but with year and salary. 
+
+### Joining
+```{r}
+data <- inner_join(adv_stats,salaries,by=c("name"="Player","Year"))
+
+# who are we missing?
+mean(adv_stats$name %in% data$name)
+nrow(data)-nrow(adv_stats)
+```
+
+I chose to do an inner join with two keys: `Year` and `name`. The player's name is referred to as `Player` in the salaries data set, so I accounted for that in the code. An inner join was necessary because both the salary data and advanced stats for a player are necessary and analysis couldn't be done without them.
+
+We retain 98.1% of the players listed in advanced stats after the join. This equates to a loss of 757 total observations. This is largely due to difference in the way names are input in the salaries data set vs. the advanced stats data set (nicknames, misspelling). Many of the names were manually corrected above if it was easy to do or if the player was identified as a top player.
+
+### Add derived values
+I calculate a set of derived statistics that attempt to quantify a player's value, accounting for their salary: `vorp_val`,`bpm_val`, and `ws_val`. These attempt to factor in salary to the advanced stats above.
+
+A players z score salary, $z_s$, is calculated relative to all the other players that year. The adjusted z score salary, $z_{adj}$, is the difference in z score from the minimum z score over the league average difference in z score from the minimum. 
+$$z_{adj}=\frac{z_s-z_{min}}{z_{avg\_diff}}$$
+This adjusted z score is calculated for salary and the other advanced statistics, and then `vorp_val` is just $\frac{z_{adj\_vorp}}{z_{adj\_sal}}$.
+```{r}
+data$Salary <- as.numeric(gsub('[$,]','',data$Salary))
+data$Year <- as.numeric(data$Year)
+data$team[data$team==""] <- "WASHINGTON BULLETS"
+# only want to count players that played at least 15 games
+data <- data %>% filter(games_played>=20)
+# get rookie year for each player
+data <- data %>% 
+  group_by(name) %>%
+  mutate(rookie_year=min(Year))
+# get average and sd salary for player based off the year they are playing
+data <- data %>% 
+  group_by(Year) %>%
+  mutate(avg_plyr_sal_year=mean(Salary),
+         sd_plyr_sal_year=sd(Salary),
+         avg_bpm_year=mean(box_plus_minus),
+         sd_bpm_year=sd(box_plus_minus),
+         avg_ws_year=mean(win_shares),
+         sd_ws_year=sd(win_shares),
+         avg_vorp_year=mean(value_over_replacement_player),
+         sd_vorp_year=sd(value_over_replacement_player)) %>%
+  ungroup()
+# get each players z score of salary
+data <- data %>%
+  mutate(z_Sal=(Salary-avg_plyr_sal_year)/sd_plyr_sal_year,
+         z_bpm=(box_plus_minus-avg_bpm_year)/sd_bpm_year,
+         z_ws=(win_shares-avg_ws_year)/sd_ws_year,
+         z_vorp=(value_over_replacement_player-avg_vorp_year)/sd_vorp_year) 
+# get minimum stats to be used for adjustment
+data <- data %>%
+  group_by(Year) %>%
+  mutate(min_z_Sal_yr=min(z_Sal),
+         min_bpm_yr=min(z_bpm),
+         min_vorp_yr=min(z_vorp),
+         min_ws_yr=min(z_ws)) %>%
+  ungroup()
+
+# get all of the differences
+data <- data %>% 
+  mutate(diff_z_Sal=z_Sal-min_z_Sal_yr,
+         diff_bpm=z_bpm-min_bpm_yr,
+         diff_vorp=z_vorp-min_vorp_yr,
+         diff_ws=z_ws-min_ws_yr)
+# get the average distance per year, to account for different years
+data <- data %>%
+  group_by(Year) %>%
+  mutate(avg_diff_z_Sal=mean(diff_z_Sal),
+         avg_diff_bpm=mean(diff_bpm),
+         avg_diff_vorp=mean(diff_vorp),
+         avg_diff_ws=mean(diff_ws)) %>%
+  ungroup()
+# now get the actual values
+data <- data %>%
+  mutate( adj_z_Sal=diff_z_Sal/avg_diff_z_Sal + 1,
+          adj_bpm=diff_bpm/avg_diff_bpm + 1,
+          adj_vorp=diff_vorp/avg_diff_vorp + 1,
+          adj_ws=diff_ws/avg_diff_ws + 1,
+          bpm_val=adj_bpm/adj_z_Sal,
+          vorp_val=adj_vorp/adj_z_Sal,
+          ws_val=adj_ws/adj_z_Sal
+  )
+# drop unneeded columns
+data <- data %>% select(-contains("min_"))
+```
+
+### Visualization
+```{r}
+data <- data %>%
+  select(name,Year,bpm_val,vorp_val,ws_val,adj_z_Sal,everything())
+```
+
+#### Correlation Matrix
+```{r}
+cormat <- data %>%
+  select(bpm_val,vorp_val,ws_val,adj_z_Sal,age,assist_percentage,
+         block_percentage,total_rebound_percentage,true_shooting_percentage,usage_percentage,turnover_percentage,steal_percentage,box_plus_minus,value_over_replacement_player,win_shares) %>%
+  cor(use="pair")
+tidycor <- cormat %>% as.data.frame %>% rownames_to_column("var1") %>%
+  pivot_longer(-1,names_to="var2",values_to="correlation")
+tidycor%>%ggplot(aes(var1,var2,fill=correlation))+
+  geom_tile()+
+  scale_fill_gradient2(low="red",mid="white",high="blue")+ 
+  theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.35, size=7),
+        axis.text.y = element_text(size=7))+
+  coord_fixed() +
+  ggtitle("Correlation Matrix")
+```
+
+I had way too many numeric variables to make this heat map readable, so I just chose the most relevant ones to look at. 
+
+Things to note:
+  - win shares, BPM, and VORP all strongly positively correlate with each other, and so do `bpm_val`,`vorp_val`,and `ws_val`
+  - Win share value, BPM value, and VORP value all negatively correlate with z score of salary, as expected. However, for VORP value and win share value the correlation isn't as strong.
+  - As expected, we see age correlates negatively with the value stats, because people get paid more with age generally.
+  - Interesting that there is a stronger negative correlation between total rebound percentage and assist percentage. This basically means that if you are grabbing a lot of rebounds you are probably a big guy who doesn't handle the ball much and makes less passes. 
+
+#### Top 10 Best Value Player Seasons all time
+I am going to stick with using VORP for the rest of the project, because using all three would make this report too long.I decided on using VORP after using it to rank players, teams, etc., and it seemed to be the most accurate and not have any outliers present.
+
+```{r}
+data %>%
+  filter(Year-rookie_year>1)%>%
+  filter(rank(desc(vorp_val)) %in% 1:10) %>% 
+  arrange(desc(vorp_val)) %>%
+  select(name,Year,vorp_val)
+```
+
+#### Top 10 Worst Values
+```{r}
+data %>% filter(rank(vorp_val) %in% 1:10) %>%
+  arrange(vorp_val) %>% select(name,Year,vorp_val)
+```
+
+#### Relationship between vorp and z score salary
+```{r}
+library(ggrepel)
+best_values <- data %>% filter(rank(desc(vorp_val)) %in% 1:3)
+worst_values <- data %>% filter(rank(vorp_val) %in% 1:3)
+ggplot(data,aes(x=adj_vorp,y=adj_z_Sal)) + 
+  geom_point() + 
+  geom_point(data=best_values,col="green",size=2) + 
+  geom_label_repel(data=best_values,aes(label = name),
+                  box.padding   = 0.35, 
+                  point.padding = 0.5,
+                  segment.color = 'grey50') +
+  geom_point(data=worst_values,col="red",size=2) + 
+  geom_label_repel(data=worst_values,aes(label = name),
+                  box.padding   = 0.35, 
+                  point.padding = 0.5,
+                  segment.color = 'grey50') + 
+  geom_smooth(method='lm') +
+  ggtitle("Salary vs. Player Performance")
+```
+
+
+
+#### Top Career Best Values (min. 5 years played)
+```{r}
+data %>% 
+  group_by(name) %>%
+  filter(n_distinct(Year)>4) %>%
+  summarize(avg_vorp_plyr=median(vorp_val)) %>%
+  filter(rank(desc(avg_vorp_plyr)) %in% 1:10) %>%
+  arrange(desc(avg_vorp_plyr))
+```
+
+#### Career Worst Values (min. 5 years played)
+```{r}
+data %>% 
+  group_by(name) %>%
+  filter(n_distinct(Year)>4) %>%
+  summarize(avg_vorp_plyr=median(vorp_val)) %>%
+  filter(rank(avg_vorp_plyr) %in% 1:10) %>%
+  arrange(avg_vorp_plyr)
+```
+Interesting, Patrick Ewing is no longer in the top 10. Let's look at his `vorp_val` over his career. 
+```{r}
+pat <- filter(data,name=="Patrick Ewing")
+ggplot(pat) +
+  geom_line(aes(x=Year,y=vorp_val)) +
+  scale_x_continuous(breaks=pat$Year) +
+  ggtitle("Patrick Ewing Value Over Career")
+```
+Now we can see that he has a mixture of very high and very low value years. It is noticeable that Michael Jordan was the highest paid by far for several years in the 90's, but never made my top 10 worsts. This is simply because he was ***that*** good.
+
+#### Who had the best value for those who were paid high salaries?
+```{r}
+data %>% 
+  group_by(name) %>%
+  summarize(avg_vorp_val=mean(vorp_val),avg_adj_Sal=mean(adj_z_Sal)) %>%
+  filter(rank(desc(avg_adj_Sal)) %in% 1:20) %>%
+  arrange(desc(avg_vorp_val))
+```
+
+#### Best team values of all time
+```{r}
+data %>%
+  group_by(team,Year) %>%
+  summarize(avg_vorp_val=mean(vorp_val)) %>%
+  ungroup() %>%
+  filter(rank(desc(avg_vorp_val)) %in% 1:10) %>%
+  arrange(desc(avg_vorp_val))
+```
+These are the highest average value teams, and it's clear that a high value team doesn't mean you are good, as none of these teams won the finals. 
+
+
+#### Team value plot
+This demonstrates the value for each NBA team that has existed since 1990 over time. It appears that teams will lose value when they acquire someone that has a really good contract. Very high values don't seem to happen during a team's good years, which indicates that even if you pay a player more than they are worth, it doesn't matter as long as they are better than the other players.  
+```{r}
+u_teams <- split(unique(data$team), ceiling(seq_along(unique(data$team))/10))
+for (u_team in u_teams){
+teams <- data %>% filter(team %in% u_team) %>%
+  group_by(team,Year)
+print(ggplot(teams,aes(x=Year,y=vorp_val,col=team))+
+  geom_line(stat="summary",fun="mean") +
+  facet_wrap(~team) +
+  theme(legend.position = "none",
+        strip.text = element_text(size=5),
+        axis.text.x = element_text(size=5),
+        axis.text.y = element_text(size=5)))
+}
+```
+
+
+#### Looking at position
+```{r}
+library(ggthemes)
+positions <- data %>%
+  group_by(positions,Year)
+ggplot(positions,aes(x=Year,y=adj_z_Sal,col=positions))+
+  geom_line(aes(linetype=positions),stat="summary",fun="mean") +
+  theme_solarized_2() +
+  ggtitle("Salaries by Position vs. Time")
+ggplot(positions,aes(x=Year,y=vorp_val,col=positions))+
+  geom_line(aes(linetype=positions),stat="summary",fun="mean") +
+  theme_solarized_2() +
+  ggtitle("Player Value by Position vs. Time")
+```
+
+This is really interesting to see and show's how the style of play has shifted in the NBA. In 1990, the graph shows that centers were consistenly the highest paid group in the NBA. By 2020, point guards are now the highest paid. We can see that in the second plot the positions are converging to a similar value. This indicates the "small ball" style that is overcoming the NBA, and highlights how each position was more distinctly valued back in the day. 
+
+### PAM Clustering
+```{r}
+# do PCA to reduce the components
+data <- data %>% select(-Salary,-contains(c("_year","diff_","_played","is_","slug")),-starts_with("z_"))
+eig1 <- data %>% select(-name,-Year,-positions,-team) %>% cor %>% eigen
+xy<-data %>% select(-name,-Year,-positions,-team) %>% as.matrix
+scores<-t(t(eig1$vectors)%*%t(xy)) %>% as.data.frame
+# now do PAM clustering with the principal components 
+pam_fit <- pam(scores,k=2)
+pam_fit$silinfo$avg.width
+data <- data %>% mutate(cluster_id=as.factor(pam_fit$clustering))
+data %>% filter(cluster_id=='1') %>% 
+  filter(rank(desc(value_over_replacement_player)) %in% 1:13) %>%
+  arrange(desc(value_over_replacement_player)) %>%
+  select(name,Year,value_over_replacement_player)
+data %>% filter(cluster_id==2) %>%
+  filter(rank(desc(value_over_replacement_player)) %in% 1:20) %>%
+  arrange(desc(value_over_replacement_player)) %>%
+  select(name,Year,value_over_replacement_player)
+
+```
+Looks like both clusters have quality players, what differentiated the two clusters to give them a solid sil width? One theory is that group 1 is related closely to tall players such as power forwards and centers while group 2 is related closely to shorter players such as guards.
+```{r}
+data %>%
+  group_by(positions) %>%
+  summarize(clust1=mean(cluster_id==1),clust2=mean(cluster_id==2)) %>%
+  ungroup()
+```
+Pretty cool! Looks like shooting guards still belong more in cluster 1, and cluster 2 players are more rare but are very present in point guards. Let's look at plots of the important stats that could be related to bigs and guards.
+
+```{r}
+library(GGally)
+ggpairs(data,columns=c("total_rebound_percentage","usage_percentage","assist_percentage"),aes(col=cluster_id)) +
+  ggtitle("Stats that Determine Cluster")
+```
+
+
+```{R, echo=F}
+## DO NOT DELETE OR MODIFY THIS CHUNK: IT MUST BE PRESENT TO RECEIVE CREDIT FOR THE ASSIGNMENT
+sessionInfo(); Sys.time(); Sys.info()
+```

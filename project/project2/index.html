@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Braeden Conrad" />
+    
+    <link rel="shortcut icon" type="image/x-icon" href="../../img/favicon.ico">
+    <title>Project 2</title>
+    <meta name="generator" content="Hugo 0.79.0" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="../../css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="../../"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="../../post/">BLOG</a></li>
+        
+        <li><a href="../../projects/">PROJECTS</a></li>
+        
+        <li><a href="../../resume/">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="../../project/project2/">Project 2</a></strong>
+          </h3>
+        </div>
+ 
+<div class="blog-title">
+          <h4>
+         January 1, 0001 
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+
+<div id="braeden-conrad-bsc875" class="section level2">
+<h2>Braeden Conrad (bsc875)</h2>
+</div>
+<div id="credit-card-application-analysis" class="section level2">
+<h2>Credit Card Application Analysis</h2>
+<div id="introduction" class="section level3">
+<h3>Introduction</h3>
+<p>This data set, called <code>CreditCard</code>, contains cross-section data on the credit history for a sample of applicants for a type of credit card.</p>
+<p>It has 1,319 observations and 12 variables, which are:</p>
+<ul>
+<li>card - whether or not the application was accepted</li>
+<li>reports - number of derogatory reports</li>
+<li>age - age in years plus twelfths of a year</li>
+<li>income - in USD (10,000)</li>
+<li>share - ratio of card expenditure to yearly income</li>
+<li>owner - whether or not the individual owns a home</li>
+<li>selfemp - self employed or not?</li>
+<li>dependents - number of dependents</li>
+<li>months - months living at current address</li>
+<li>majorcards - number of major credit cards held</li>
+<li>active - number of active credit accounts</li>
+</ul>
+<pre class="r"><code>library(tidyverse)
+install.packages(&quot;AER&quot;, repos = &quot;http://cran.us.r-project.org&quot;)
+library(AER)
+data(&quot;CreditCard&quot;)
+CreditCard &lt;- na.omit(CreditCard)
+CreditCard$card &lt;- ifelse(CreditCard$card == &quot;yes&quot;, 1, 0)</code></pre>
+</div>
+<div id="manova" class="section level3">
+<h3>MANOVA</h3>
+<div id="looking-at-if-there-is-a-mean-difference-in-homeowners-vs.-non-homeowners" class="section level4">
+<h4>Looking at if there is a mean difference in homeowners vs. non-homeowners</h4>
+<pre class="r"><code>man &lt;- manova(cbind(reports, income, age, share, expenditure, 
+    dependents, months, majorcards, active) ~ owner, data = CreditCard)
+summary(man)</code></pre>
+<pre><code>##             Df  Pillai approx F num Df den Df    Pr(&gt;F)    
+## owner        1 0.27127   54.143      9   1309 &lt; 2.2e-16 ***
+## Residuals 1317                                             
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p>There appears to be a mean difference between the groups across numeric variables.</p>
+<pre class="r"><code>summary.aov(man)</code></pre>
+<pre><code>##  Response reports :
+##               Df  Sum Sq Mean Sq F value  Pr(&gt;F)  
+## owner          1    6.85  6.8451  3.7904 0.05176 .
+## Residuals   1317 2378.40  1.8059                  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+##  Response income :
+##               Df Sum Sq Mean Sq F value    Pr(&gt;F)    
+## owner          1  398.9  398.90   155.3 &lt; 2.2e-16 ***
+## Residuals   1317 3382.8    2.57                      
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+##  Response age :
+##               Df Sum Sq Mean Sq F value    Pr(&gt;F)    
+## owner          1  18337   18337  205.96 &lt; 2.2e-16 ***
+## Residuals   1317 117253      89                      
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+##  Response share :
+##               Df  Sum Sq   Mean Sq F value Pr(&gt;F)
+## owner          1  0.0029 0.0029344  0.3273 0.5673
+## Residuals   1317 11.8059 0.0089643               
+## 
+##  Response expenditure :
+##               Df   Sum Sq Mean Sq F value    Pr(&gt;F)    
+## owner          1   848005  848005  11.535 0.0007033 ***
+## Residuals   1317 96819932   73516                      
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+##  Response dependents :
+##               Df  Sum Sq Mean Sq F value    Pr(&gt;F)    
+## owner          1  196.16 196.163  139.21 &lt; 2.2e-16 ***
+## Residuals   1317 1855.79   1.409                      
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+##  Response months :
+##               Df  Sum Sq Mean Sq F value    Pr(&gt;F)    
+## owner          1  329688  329688   79.54 &lt; 2.2e-16 ***
+## Residuals   1317 5458894    4145                      
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+##  Response majorcards :
+##               Df  Sum Sq Mean Sq F value  Pr(&gt;F)  
+## owner          1   0.803 0.80303  5.3914 0.02039 *
+## Residuals   1317 196.163 0.14895                  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+##  Response active :
+##               Df Sum Sq Mean Sq F value    Pr(&gt;F)    
+## owner          1   3961  3961.2  107.68 &lt; 2.2e-16 ***
+## Residuals   1317  48447    36.8                      
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p>Every numeric variable was significant in the difference between home owners and non home owners except for <code>share</code> and <code>reports</code>.</p>
+<p>Post-hoc t tests do not need to be done because there are only two groups.</p>
+<p>In total, there was 1 MANOVA test and 9 ANOVA tests. The probability of a Type-1 error is <span class="math inline">\(1-.95^{10}=0.401\)</span>. The Bonaferri correction adjusts the siginificance level from 0.05 to <span class="math inline">\(\frac{.05}{10}=0.005\)</span>. This means that <code>majorcards</code> is not significantly different between home owners and non home owners, along with <code>reports</code> and <code>share</code>.</p>
+</div>
+<div id="testing-manova-assumptions" class="section level4">
+<h4>Testing MANOVA assumptions</h4>
+<pre class="r"><code>library(rstatix)
+
+group &lt;- CreditCard$owner
+DVs &lt;- CreditCard %&gt;% select(reports, income, age, share, expenditure, 
+    dependents, months, majorcards, active)
+
+# Test multivariate normality for each group (null:
+# assumption met)
+sapply(split(DVs, group), mshapiro_test)</code></pre>
+<pre><code>##           no           yes         
+## statistic 0.5063539    0.5745701   
+## p.value   5.038323e-41 2.765717e-35</code></pre>
+<pre class="r"><code># If any p&lt;.05, stop (assumption violated). If not, test
+# homogeneity of covariance matrices
+
+# Box&#39;s M test (null: assumption met)
+box_m(DVs, group)</code></pre>
+<pre><code>## # A tibble: 1 x 4
+##   statistic   p.value parameter method                                          
+##       &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;                                           
+## 1      634. 5.30e-105        45 Box&#39;s M-test for Homogeneity of Covariance Matr…</code></pre>
+<pre class="r"><code># Optionally, view covariance matrices for each group
+lapply(split(DVs, group), cov)</code></pre>
+<pre><code>## $no
+##                  reports       income          age         share  expenditure
+## reports       2.16580071  0.089670393   1.23752089 -0.0243480702   -51.878243
+## income        0.08967039  1.530462845   2.54867771 -0.0059544145    61.917054
+## age           1.23752089  2.548677710  74.37045970 -0.0861272805   -17.119108
+## share        -0.02434807 -0.005954415  -0.08612728  0.0107238737    23.452824
+## expenditure -51.87824261 61.917054483 -17.11910806 23.4528242167 64406.967790
+## dependents    0.04847161  0.265874240   1.74948388 -0.0124026776    -7.368689
+## months        7.87096667  2.371648521  91.58392155 -0.2205574704  -562.835009
+## majorcards   -0.01008262  0.035551612   0.15756619  0.0034784554     9.962252
+## active        2.32104445  0.644815116   5.05045565  0.0006840327    47.459820
+##              dependents       months   majorcards        active
+## reports      0.04847161    7.8709667 -0.010082625  2.3210444452
+## income       0.26587424    2.3716485  0.035551612  0.6448151162
+## age          1.74948388   91.5839215  0.157566194  5.0504556491
+## share       -0.01240268   -0.2205575  0.003478455  0.0006840327
+## expenditure -7.36868868 -562.8350085  9.962252206 47.4598198525
+## dependents   1.09294805   -0.4048328 -0.013004085 -0.1871738867
+## months      -0.40483282 2578.6574610 -1.017346747 22.1040639375
+## majorcards  -0.01300409   -1.0173467  0.162963821  0.3152805816
+## active      -0.18717389   22.1040639  0.315280582 31.1469206076
+## 
+## $yes
+##                  reports       income         age         share  expenditure
+## reports       1.34862603   0.03322962   0.4053703 -1.531727e-02   -43.547988
+## income        0.03322962   3.88774796   4.7735180 -1.039987e-02   184.163599
+## age           0.40537028   4.77351804 107.6593224 -1.303254e-01   -99.460708
+## share        -0.01531727  -0.01039987  -0.1303254  6.728317e-03    19.398099
+## expenditure -43.54798754 184.16359898 -99.4607076  1.939810e+01 85089.650332
+## dependents    0.07684729   0.70526360   0.6080255 -5.105376e-03    27.774758
+## months        2.50903318  10.46506269 416.1953715 -4.550829e-01 -1385.584713
+## majorcards    0.00822304   0.08339184  -0.3223268 -5.655917e-05     4.454575
+## active        1.33945041   1.39555509   5.2048201 -2.683073e-02    53.231391
+##               dependents        months    majorcards      active
+## reports      0.076847291     2.5090332  8.223040e-03  1.33945041
+## income       0.705263596    10.4650627  8.339184e-02  1.39555509
+## age          0.608025512   416.1953715 -3.223268e-01  5.20482006
+## share       -0.005105376    -0.4550829 -5.655917e-05 -0.02683073
+## expenditure 27.774758134 -1385.5847131  4.454575e+00 53.23139115
+## dependents   1.810837438    -4.6110837  6.157635e-03  0.63349754
+## months      -4.611083744  6135.2132708 -2.007336e+00  4.59568224
+## majorcards   0.006157635    -2.0073357  1.311354e-01  0.16466853
+## active       0.633497537     4.5956822  1.646685e-01 43.95095258</code></pre>
+<p>The multivariate normality assumption is met. Box's M test also demonstrates homogeneity of covariance matrices exists.</p>
+</div>
+</div>
+<div id="randomization-tests" class="section level3">
+<h3>Randomization Tests</h3>
+<div id="mean-difference-in-income-for-those-that-are-self-employed" class="section level4">
+<h4>Mean Difference in Income for those that are self employed?</h4>
+<pre class="r"><code>set.seed(1234)
+
+# get original difference
+orig_diff &lt;- abs(mean(CreditCard[CreditCard$selfemp == &quot;yes&quot;, 
+    ]$income) - mean(CreditCard[CreditCard$selfemp == &quot;no&quot;, ]$income))
+# randomization test
+diff &lt;- vector()
+n &lt;- 5000
+for (i in 1:n) {
+    new &lt;- data.frame(income = sample(CreditCard$income), selfemp = CreditCard$selfemp)
+    diff[i] &lt;- mean(new[new$selfemp == &quot;yes&quot;, ]$income) - mean(new[new$selfemp == 
+        &quot;no&quot;, ]$income)
+}
+
+hist(diff)
+abline(v = c(orig_diff, -orig_diff), col = &quot;red&quot;)</code></pre>
+<p><img src="../../project/project2_files/figure-html/unnamed-chunk-5-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>mean(diff &gt; orig_diff | diff &lt; (-orig_diff))</code></pre>
+<pre><code>## [1] 2e-04</code></pre>
+<p>This shows that being self employed or not significantly predicts a mean difference in income between the two groups.</p>
+</div>
+</div>
+<div id="linear-regression" class="section level3">
+<h3>Linear Regression</h3>
+<div id="trying-to-predict-age-from-other-variables" class="section level4">
+<h4>Trying to predict age from other variables</h4>
+<pre class="r"><code>cc &lt;- CreditCard %&gt;% mutate(income_c = income - mean(income))
+fit &lt;- lm(age ~ income_c + months + selfemp + selfemp:income_c, 
+    data = cc)
+summary(fit)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = age ~ income_c + months + selfemp + selfemp:income_c, 
+##     data = cc)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -41.178  -5.226  -1.353   4.494  52.226 
+## 
+## Coefficients:
+##                      Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)         29.717797   0.317198  93.689  &lt; 2e-16 ***
+## income_c             1.739969   0.151132  11.513  &lt; 2e-16 ***
+## months               0.061174   0.003644  16.785  &lt; 2e-16 ***
+## selfempyes           2.571384   0.992516   2.591  0.00968 ** 
+## income_c:selfempyes -1.307651   0.463067  -2.824  0.00482 ** 
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 8.681 on 1314 degrees of freedom
+## Multiple R-squared:  0.2698, Adjusted R-squared:  0.2675 
+## F-statistic: 121.3 on 4 and 1314 DF,  p-value: &lt; 2.2e-16</code></pre>
+<p>The intercept coefficient, 29.71, represents the average age of someone applying for credit card who is not self employed, has spent 0 months at a new address, and has an average income.</p>
+<p>The coefficient for income_c, 1.74, represents a 1.74 year age increase for each unit of income ($10,000) above the average income, for those who are not self employed and months are held equal.</p>
+<p>The coefficient for self employment, 2.57, represents a +2.57 year average age difference between those who are self employed and those who aren't.</p>
+<p>The coefficient for the interaction between income and self-employment, -1.307, indicates a <span class="math inline">\(1.74-1.31=0.43\)</span> year age increase for each unit of income above the average, for those who are self employed and months are held equal.</p>
+<p>The coefficient for months, 0.0616, means that every month at the same address represents a 0.0616 year age increase.</p>
+<pre class="r"><code>ggplot(cc, aes(x = months, y = age)) + geom_point() + geom_smooth(method = &quot;lm&quot;)</code></pre>
+<p><img src="../../project/project2_files/figure-html/unnamed-chunk-7-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(cc, aes(x = income_c, y = age, col = selfemp)) + geom_point() + 
+    geom_smooth(method = &quot;lm&quot;)</code></pre>
+<p><img src="../../project/project2_files/figure-html/unnamed-chunk-7-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># check for homeskedasticity
+library(sandwich)
+library(lmtest)
+bptest(fit)</code></pre>
+<pre><code>## 
+##  studentized Breusch-Pagan test
+## 
+## data:  fit
+## BP = 29.709, df = 4, p-value = 5.61e-06</code></pre>
+<p>The Breusch-Pagan test indicates this model is heteroskedastic. Must use robust standard errors:</p>
+<pre class="r"><code>coeftest(fit, vcov = vcovHC(fit))</code></pre>
+<pre><code>## 
+## t test of coefficients:
+## 
+##                       Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)         29.7177967  0.3133732 94.8320  &lt; 2e-16 ***
+## income_c             1.7399687  0.1673446 10.3975  &lt; 2e-16 ***
+## months               0.0611736  0.0049484 12.3624  &lt; 2e-16 ***
+## selfempyes           2.5713840  1.3007108  1.9769  0.04826 *  
+## income_c:selfempyes -1.3076510  0.5522227 -2.3680  0.01803 *  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p>All of the variables are still significant, and the coefficients are the same. The standard error is larger for the self employment variable than the original.</p>
+<p>The <span class="math inline">\(R^2\)</span> statistic found earlier was 0.2698, which indicates that about 27% of variation of the age is explained by the model, which is poor.</p>
+</div>
+<div id="bootstrapped-se" class="section level4">
+<h4>Bootstrapped SE</h4>
+<pre class="r"><code>coef_vals &lt;- matrix(nrow = 1000, ncol = 5)
+for (i in 1:1000) {
+    data &lt;- cc[sample(nrow(cc), replace = T), ]
+    fit1 &lt;- lm(age ~ income_c + months + selfemp + selfemp:income_c, 
+        data = data)
+    coef_vals[i, ] &lt;- coef(fit1)
+}
+se &lt;- apply(coef_vals, 2, sd)
+means &lt;- apply(coef_vals, 2, mean)
+x &lt;- data.frame(SE = se, orig_SE = summary(fit)$coefficients[, 
+    2], coef = means, orig_coef = coef(fit))
+x</code></pre>
+<pre><code>##                              SE     orig_SE        coef   orig_coef
+## (Intercept)         0.312245186 0.317197764 29.74159167 29.71779670
+## income_c            0.162335502 0.151131732  1.74524916  1.73996872
+## months              0.004787328 0.003644456  0.06090932  0.06117357
+## selfempyes          1.340318466 0.992516093  2.58833345  2.57138400
+## income_c:selfempyes 0.559055752 0.463066988 -1.33508463 -1.30765098</code></pre>
+<p>The bootstrap standard error is very similar to the robust standard errors, and the coefficients are similar too.</p>
+</div>
+</div>
+<div id="logistic-regression" class="section level3">
+<h3>Logistic Regression</h3>
+<pre class="r"><code>class_diag &lt;- function(probs, truth) {
+    tab &lt;- table(factor(probs &gt; 0.5, levels = c(&quot;FALSE&quot;, &quot;TRUE&quot;)), 
+        truth)
+    acc = sum(diag(tab))/sum(tab)
+    sens = tab[2, 2]/colSums(tab)[2]
+    spec = tab[1, 1]/colSums(tab)[1]
+    ppv = tab[2, 2]/rowSums(tab)[2]
+    f1 = 2 * (sens * ppv)/(sens + ppv)
+    
+    if (is.numeric(truth) == FALSE &amp; is.logical(truth) == FALSE) {
+        truth &lt;- as.numeric(truth) - 1
+    }
+    
+    # CALCULATE EXACT AUC
+    ord &lt;- order(probs, decreasing = TRUE)
+    probs &lt;- probs[ord]
+    truth &lt;- truth[ord]
+    
+    TPR = cumsum(truth)/max(1, sum(truth))
+    FPR = cumsum(!truth)/max(1, sum(!truth))
+    
+    dup &lt;- c(probs[-1] &gt;= probs[-length(probs)], FALSE)
+    TPR &lt;- c(0, TPR[!dup], 1)
+    FPR &lt;- c(0, FPR[!dup], 1)
+    
+    n &lt;- length(TPR)
+    auc &lt;- sum(((TPR[-1] + TPR[-n])/2) * (FPR[-1] - FPR[-n]))
+    
+    data.frame(acc, sens, spec, ppv, f1, auc)
+}</code></pre>
+<div id="predicting-credit-card-application-acceptance" class="section level4">
+<h4>Predicting credit card application acceptance</h4>
+<pre class="r"><code>CreditCard &lt;- mutate(CreditCard, income_c = income - mean(income))
+glm_fit &lt;- glm(card ~ reports + income_c, data = CreditCard, 
+    family = &quot;binomial&quot;)
+summary(glm_fit)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = card ~ reports + income_c, family = &quot;binomial&quot;, 
+##     data = CreditCard)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -2.7890   0.3365   0.5318   0.5959   2.7422  
+## 
+## Coefficients:
+##             Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)  1.91158    0.09084  21.043  &lt; 2e-16 ***
+## reports     -1.35316    0.11225 -12.055  &lt; 2e-16 ***
+## income_c     0.25633    0.05688   4.506 6.59e-06 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 1404.6  on 1318  degrees of freedom
+## Residual deviance: 1087.0  on 1316  degrees of freedom
+## AIC: 1093
+## 
+## Number of Fisher Scoring iterations: 6</code></pre>
+<pre class="r"><code>exp(coef(glm_fit))</code></pre>
+<pre><code>## (Intercept)     reports    income_c 
+##   6.7637899   0.2584218   1.2921729</code></pre>
+<p>The coefficient for the intercept, 1.91, is the logodds of having the credit card accepted with an average income and 0 reports.</p>
+<p>The coefficient for the reports, -1.353, is the logodds change for each derogatory report a person has. The exponentiated coefficient <span class="math inline">\(e^{-1.35}=0.258\)</span> shows that it reduces the odds of having the credit card accepted.</p>
+<p>The coefficient for centered income, 0.256, is the logodds change for each unit increase in income. The exponentiated coefficient, 1.292, shows that the odds increase by 1.29 for each unit increase in income above the average.</p>
+<pre class="r"><code>table(pred = glm_fit$fitted.values &gt; 0.5, true = as.logical(CreditCard$card)) %&gt;% 
+    addmargins</code></pre>
+<pre><code>##        true
+## pred    FALSE TRUE  Sum
+##   FALSE   102   13  115
+##   TRUE    194 1010 1204
+##   Sum     296 1023 1319</code></pre>
+<pre class="r"><code>class_diag(glm_fit$fitted.values, CreditCard$card)</code></pre>
+<pre><code>##         acc      sens      spec       ppv        f1       auc
+## 1 0.8430629 0.9872923 0.3445946 0.8388704 0.9070498 0.7773358</code></pre>
+<p>The AUC is 0.77, which is a fair model. The biggest issue the model has is with detecting the negatives, which are the denials for getting a credit card. This indicates that it would help for the threshold to be lowered from probability of 0.5.</p>
+<pre class="r"><code>logit &lt;- predict(glm_fit, CreditCard, type = &quot;link&quot;)
+data &lt;- CreditCard %&gt;% mutate(logit = logit, card = as.factor(card))
+ggplot(data) + geom_point(aes(x = income, y = logit, col = card))</code></pre>
+<p><img src="../../project/project2_files/figure-html/unnamed-chunk-15-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>install.packages(&quot;ROSE&quot;, repos = &quot;http://cran.us.r-project.org&quot;)
+library(ROSE)
+roc.curve(CreditCard$card, glm_fit$fitted.values)</code></pre>
+<p><img src="../../project/project2_files/figure-html/unnamed-chunk-16-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre><code>## Area under the curve (AUC): 0.777</code></pre>
+<p>The area under the curve is 0.77 which is fair, and the curve has a fairly normal shape.</p>
+</div>
+<div id="using-all-predictors" class="section level4">
+<h4>Using all predictors</h4>
+<pre class="r"><code>CreditCard &lt;- select(CreditCard, -income_c)
+glm_fit2 &lt;- glm(card ~ ., data = CreditCard, family = &quot;binomial&quot;)
+class_diag(glm_fit2$fitted.values, CreditCard$card)</code></pre>
+<pre><code>##         acc      sens      spec       ppv        f1       auc
+## 1 0.8597422 0.9951124 0.3918919 0.8497496 0.9167042 0.6935022</code></pre>
+<p>The AUC actually decreased using all of the predictors. The issue again was the true negative rate, because it did not identify when the credit card was not given.</p>
+<p>Now, using 10-fold CV:</p>
+<pre class="r"><code>set.seed(5432)
+k &lt;- 10
+data &lt;- CreditCard[sample(nrow(CreditCard)), ]
+folds &lt;- cut(seq(1:nrow(CreditCard)), breaks = k, labels = F)
+diags &lt;- NULL
+for (i in 1:k) {
+    train &lt;- data[folds != i, ]
+    test &lt;- data[folds == i, ]
+    
+    fit &lt;- glm(card ~ ., data = train, family = &quot;binomial&quot;)
+    probs &lt;- predict(fit, newdata = test, type = &quot;response&quot;)
+    diags &lt;- rbind(diags, class_diag(probs, test$card))
+}
+apply(diags, 2, mean)</code></pre>
+<pre><code>##       acc      sens      spec       ppv        f1       auc 
+## 0.8748728 0.9688615 0.5315524 0.8870795 0.9230376 0.7530536</code></pre>
+<p>By doing the 10-fold CV, the specificity increased to 0.532, which was higher than the previous model, and also showed a larger AUC of 0.75, which is closer to the previous model which was 0.77.</p>
+<p>Now trying with Lasso:</p>
+<pre class="r"><code>library(glmnet)
+set.seed(1234)
+
+card_X &lt;- model.matrix(~., CreditCard %&gt;% select(-card))
+card_y &lt;- as.matrix(CreditCard$card)
+cv.lasso1 &lt;- cv.glmnet(x = card_X, y = card_y, family = &quot;binomial&quot;)
+lasso_fit &lt;- glmnet(x = card_X, y = card_y, family = &quot;binomial&quot;, 
+    alpha = 1, lambda = cv.lasso1$lambda.1se)
+coef(lasso_fit)</code></pre>
+<pre><code>## 13 x 1 sparse Matrix of class &quot;dgCMatrix&quot;
+##                        s0
+## (Intercept)  -3.026299611
+## (Intercept)   .          
+## reports      -1.861668573
+## age           0.013763397
+## income        0.110364196
+## share       812.804659729
+## expenditure   0.073735834
+## owneryes      0.261824825
+## selfempyes    0.313466477
+## dependents   -0.325926199
+## months       -0.001673302
+## majorcards    0.419314025
+## active        0.077835301</code></pre>
+<p>The variables that were retained from the lasso fit were all of them. Therefore it isn't necessary to do another 10-fold CV on all of the same variables.</p>
+<pre><code>## R version 3.6.1 (2019-07-05)
+## Platform: x86_64-pc-linux-gnu (64-bit)
+## Running under: Ubuntu 18.04.5 LTS
+## 
+## Matrix products: default
+## BLAS:   /stor/system/opt/R/R-3.6.1/lib/R/lib/libRblas.so
+## LAPACK: /stor/system/opt/R/R-3.6.1/lib/R/lib/libRlapack.so
+## 
+## locale:
+##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+##  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+##  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+##  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+##  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+## [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+##  [1] glmnet_4.0-2    Matrix_1.2-17   ROSE_0.0-3      rstatix_0.6.0  
+##  [5] AER_1.2-9       survival_3.2-3  sandwich_2.5-1  lmtest_0.9-37  
+##  [9] zoo_1.8-8       car_3.0-8       carData_3.0-4   forcats_0.5.0  
+## [13] stringr_1.4.0   dplyr_1.0.1     purrr_0.3.4     readr_1.3.1    
+## [17] tidyr_1.1.1     tibble_3.0.3    ggplot2_3.3.2   tidyverse_1.3.0
+## 
+## loaded via a namespace (and not attached):
+##  [1] nlme_3.1-148      fs_1.5.0          lubridate_1.7.9   httr_1.4.2       
+##  [5] tools_3.6.1       backports_1.1.8   utf8_1.1.4        R6_2.4.1         
+##  [9] DBI_1.1.0         mgcv_1.8-31       colorspace_1.4-1  withr_2.2.0      
+## [13] tidyselect_1.1.0  curl_4.3          compiler_3.6.1    cli_2.0.2        
+## [17] rvest_0.3.6       formatR_1.7       xml2_1.3.2        labeling_0.3     
+## [21] bookdown_0.20     scales_1.1.1      digest_0.6.25     foreign_0.8-71   
+## [25] rmarkdown_2.3     rio_0.5.16        pkgconfig_2.0.3   htmltools_0.5.0  
+## [29] dbplyr_1.4.4      rlang_0.4.7       readxl_1.3.1      rstudioapi_0.11  
+## [33] shape_1.4.5       generics_0.0.2    farver_2.0.3      jsonlite_1.7.0   
+## [37] zip_2.1.0         magrittr_1.5      Formula_1.2-3     Rcpp_1.0.5       
+## [41] munsell_0.5.0     fansi_0.4.1       abind_1.4-5       lifecycle_0.2.0  
+## [45] stringi_1.5.3     yaml_2.2.1        grid_3.6.1        blob_1.2.1       
+## [49] crayon_1.3.4      lattice_0.20-41   haven_2.3.1       splines_3.6.1    
+## [53] hms_0.5.3         knitr_1.29        pillar_1.4.6      codetools_0.2-16 
+## [57] reprex_0.3.0      glue_1.4.2        evaluate_0.14     blogdown_0.20    
+## [61] data.table_1.13.0 modelr_0.1.8      vctrs_0.3.2       foreach_1.5.0    
+## [65] cellranger_1.1.0  gtable_0.3.0      assertthat_0.2.1  xfun_0.16        
+## [69] openxlsx_4.1.5    broom_0.7.0       iterators_1.0.12  ellipsis_0.3.1</code></pre>
+<pre><code>## [1] &quot;2020-12-03 15:55:56 CST&quot;</code></pre>
+<pre><code>##                                       sysname 
+##                                       &quot;Linux&quot; 
+##                                       release 
+##                          &quot;4.15.0-117-generic&quot; 
+##                                       version 
+## &quot;#118-Ubuntu SMP Fri Sep 4 20:02:41 UTC 2020&quot; 
+##                                      nodename 
+##                  &quot;educcomp01.ccbb.utexas.edu&quot; 
+##                                       machine 
+##                                      &quot;x86_64&quot; 
+##                                         login 
+##                                     &quot;unknown&quot; 
+##                                          user 
+##                                      &quot;bsc875&quot; 
+##                                effective_user 
+##                                      &quot;bsc875&quot;</code></pre>
+</div>
+</div>
+</div>
+
+            
+        <hr>         <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div> 
+            </div>
+          </div>
+
+   <hr>  <div class="disqus">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+
+    (function() {
+      
+      
+      if (window.location.hostname == "localhost")
+        return;
+
+      var disqus_shortname = '';
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div> 
+        </div>
+      </div>
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="../../js/docs.min.js"></script>
+<script src="../../js/main.js"></script>
+
+<script src="../../js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>
