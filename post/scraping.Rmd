@@ -1,0 +1,48 @@
+---
+title: "Child Mortality and GDP Data in R and Python"
+author: "Braeden Conrad"
+date: 2020-12-02T21:13:14-05:00
+categories: ["R"]
+tags: ["R Markdown","python"]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(reticulate)
+gdp_mort <- read.csv("child-mortality-gdp-per-capita.csv")
+```
+
+### Calculate transformation in Python
+```{python}
+import re
+import numpy as np
+r.gdp_mort.head()
+# get log mortality and log of gdp
+log_gdp = np.log(r.gdp_mort.gdp)
+log_mortality = np.log(r.gdp_mort.mortality)
+```
+
+### Plot in R
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(ggrepel)
+gdp_mort$log_gdp <- py$log_gdp
+gdp_mort$log_mortality <- py$log_mortality
+nk <- filter(gdp_mort,country=="North Korea")
+ggplot(gdp_mort,aes(x=log_gdp,y=log_mortality))+
+  geom_point()+
+  geom_smooth(method="lm")+
+  geom_point(data=nk,col="red",size=2)+
+  geom_label_repel(data=nk,aes(label = country),
+                  box.padding   = 0.35, 
+                  point.padding = 0.5,
+                  segment.color = 'grey50')+
+  ggtitle("Log Child Mortality vs. Log GDP for each country") 
+```
+North Korea actually has a low child mortality rate for their GDP, which I find hard to believe!
+
+![](http://static.stereogum.com/uploads/2015/09/Nicholas-Fraser-Why-You-Always-Lying-video.jpg)
+

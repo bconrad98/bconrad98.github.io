@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>python on Braeden Conrad</title>
+    <link>/tags/python/</link>
+    <description>Recent content in python on Braeden Conrad</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-US</language>
+    <lastBuildDate>Wed, 02 Dec 2020 21:13:14 -0500</lastBuildDate><atom:link href="/tags/python/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Child Mortality and GDP Data in R and Python</title>
+      <link>/post/2020/12/02/child-mortality-and-gdp-data-in-r-and-python/</link>
+      <pubDate>Wed, 02 Dec 2020 21:13:14 -0500</pubDate>
+      
+      <guid>/post/2020/12/02/child-mortality-and-gdp-data-in-r-and-python/</guid>
+      <description>library(reticulate) gdp_mort &amp;lt;- read.csv(&amp;quot;child-mortality-gdp-per-capita.csv&amp;quot;) Calculate transformation in Python import re import numpy as np r.gdp_mort.head() # get log mortality and log of gdp ## country gdp mortality ## 0 Afghanistan 2022 76.1 ## 1 Albania 10703 14.4 ## 2 Algeria 12782 25.6 ## 3 Angola 8615 91.2 ## 4 Argentina 19000 12.1 log_gdp = np.log(r.gdp_mort.gdp) log_mortality = np.log(r.gdp_mort.mortality)  Plot in R library(ggplot2) library(tidyverse) ## ── Attaching packages ────────────────────────────────────────── tidyverse 1.</description>
+    </item>
+    
+  </channel>
+</rss>
